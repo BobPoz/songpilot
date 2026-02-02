@@ -1,12 +1,809 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SonicBrief</title>
-  </head>
-  <body>
-    <h1>SonicBrief</h1>
-    <p>It’s live.</p>
-  </body>
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonic Brief AI v8.5 | Professional Studio Console</title>
+    
+    <style>
+        :root {
+            /* Professional UI Palette */
+            --accent: #8b5cf6;
+            --accent-hover: #7c3aed;
+            --accent-glow: rgba(139, 92, 246, 0.2);
+            --bg-deep: #f1f5f9;
+            --bg-surface: #ffffff;
+            --bg-elevated: #f8fafc;
+            --text-main: #1e293b;
+            --text-dim: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --panel-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg-deep: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-elevated: #334155;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --panel-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        .app-shell { display: grid; grid-template-columns: 260px 1fr; height: 100vh; }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 24px; overflow-y: auto;
+        }
+
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+        .brand-icon { font-size: 24px; transition: var(--transition); }
+        .brand-text h1 { font-size: 1.1rem; font-weight: 900; color: var(--accent); }
+        
+        .nav-group { margin-bottom: 24px; }
+        .nav-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--text-dim); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: var(--transition); cursor: pointer; margin-bottom: 4px; }
+        .nav-item:hover { background-color: var(--bg-elevated); color: var(--text-main); }
+        .nav-item.active { background-color: var(--accent); color: white; }
+
+        /* Workspace Panels */
+        .main-container { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .top-bar { height: 60px; background-color: var(--bg-surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+        
+        .editor-layout { display: grid; grid-template-columns: 1fr 420px; flex-grow: 1; overflow: hidden; }
+        .workspace { padding: 24px; overflow-y: auto; background-color: var(--bg-deep); }
+        .results-panel { background-color: var(--bg-surface); border-left: 1px solid var(--border); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+        /* Card Components */
+        .card { background-color: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: var(--panel-shadow); position: relative;}
+        .card-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 16px; color: var(--accent); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+
+        .grid { display: grid; gap: 12px; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+        .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        label { font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
+        input, select, textarea { background-color: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text-main); font-family: inherit; font-size: 0.85rem; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+
+        .magic-btn {
+            background: linear-gradient(135deg, var(--accent), #d946ef);
+            color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.7rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: var(--transition);
+        }
+        .magic-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+        .suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; margin-bottom: 12px; }
+        .chip { padding: 4px 10px; background-color: var(--bg-elevated); border: 1px solid var(--border); border-radius: 100px; font-size: 0.7rem; cursor: pointer; color: var(--text-dim); transition: var(--transition); }
+        .chip:hover { border-color: var(--accent); color: var(--text-main); }
+
+        .workflow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .wf-btn { background-color: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 10px 4px; text-align: center; cursor: pointer; transition: var(--transition); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .wf-btn.active { background-color: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+        .slider-box { background-color: var(--bg-elevated); padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+        .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .slider-header span { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; background: #cbd5e1; border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+
+        .output-block { background-color: var(--bg-elevated); border-radius: 8px; padding: 12px; position: relative; border: 1px solid var(--border); }
+        .output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .output-content { font-family: 'Fira Code', monospace; font-size: 0.8rem; white-space: pre-wrap; color: var(--text-main); max-height: 200px; overflow-y: auto; }
+
+        .btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: var(--transition); border: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--accent); color: white; width: 100%; justify-content: center; }
+        .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 11000;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal {
+            background: var(--bg-surface); border-radius: 12px; padding: 24px;
+            width: 100%; max-width: 520px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 12000;
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; color: white;
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .visual-preview { width: 100%; aspect-ratio: 1; border-radius: 8px; background: var(--bg-deep); border: 1px solid var(--border); overflow: hidden; position: relative; margin-top: 10px; display: none; }
+        .visual-preview img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .chord-display { background: var(--accent-glow); padding: 12px; border-radius: 8px; border: 1px solid var(--accent); margin-top: 12px; display: none; }
+        .chord-text { font-family: 'Fira Code', monospace; font-size: 0.85rem; font-weight: 700; color: var(--accent); line-height: 1.4; white-space: pre-wrap; }
+
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 15000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--accent); color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; box-shadow: 0 10px 15px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+        /* Print Layout (PDF) */
+        @media print {
+            .sidebar, .top-bar, .magic-btn, .suggestions, .workflow-grid, .btn-primary, .nav-group, .card-title button, .field select, .field input[type="file"], .field input[type="range"], .slider-box, #takeVaultList, #newTakeUrl, aside.results-panel button, #lyricsCard button { display: none !important; }
+            body { background: white !important; color: black !important; overflow: visible !important; }
+            .app-shell { display: block !important; }
+            .main-container { height: auto !important; overflow: visible !important; }
+            .editor-layout { display: block !important; }
+            .workspace { padding: 0 !important; width: 100% !important; }
+            .card { border: 1px solid #eee !important; box-shadow: none !important; page-break-inside: avoid; margin-bottom: 20px !important; }
+            .results-panel { display: block !important; border: none !important; width: 100% !important; padding: 0 !important; }
+            .output-block { background: #f9f9f9 !important; border: 1px solid #ddd !important; padding: 20px !important; }
+            .brand { display: flex !important; border-bottom: 2px solid #8b5cf6 !important; padding-bottom: 10px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="aiLoader" class="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loaderText">✨ Gemini is architecting...</div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Core Ops: Export Session Modal -->
+<div id="exportModal" class="modal-overlay">
+    <div class="modal">
+        <h3 class="card-title">Save Project Session</h3>
+        <div class="field">
+            <label>Session Filename</label>
+            <input type="text" id="exportFileName" placeholder="Track_Name_v1">
+        </div>
+        <div style="display:flex; gap:10px; margin-top: 24px;">
+            <button class="btn btn-ghost" style="flex:1" onclick="closeModal('exportModal')">Cancel</button>
+            <button class="btn btn-primary" style="flex:1" onclick="executeExport()">Download JSON</button>
+        </div>
+    </div>
+</div>
+
+<!-- Knowledge Base: Guide Modal -->
+<div id="guideModal" class="modal-overlay">
+    <div class="modal">
+        <h3 class="card-title">Studio Guide v8.5 <button onclick="closeModal('guideModal')" style="cursor:pointer; background:none; border:none; color:inherit;">✕</button></h3>
+        <div style="font-size:0.85rem; line-height:1.6; color:var(--text-dim); max-height: 400px; overflow-y: auto; padding-right: 10px;">
+            <p><strong>Sonic Brief AI</strong> is a professional precision tool for guiding AI generators (Suno/Udio) and professional DAWs.</p>
+            
+            <h4 style="color:var(--accent); margin-top: 15px;">🎼 Results (PDF Export)</h4>
+            <p>Click "Export Results PDF" under Core Ops. This triggers your browser's print dialog. <strong>Important:</strong> Set the destination to <em>"Save as PDF"</em> to store a pro production document locally.</p>
+
+            <h4 style="color:var(--accent); margin-top: 15px;">🎼 Structural Harmony Engine</h4>
+            <p>Select your **Song Structure** and **Genre** first. The engine generates style-accurate progressions mapped to your sections (e.g., Nashville numbering for Country, extensions for Jazz).</p>
+
+            <h4 style="color:var(--accent); margin-top: 15px;">🎹 Logic Pro Technical Bible</h4>
+            <p>The **✨ Logic Pro Tips** button generates a specific engineering roadmap to help you finalize tracks in Logic Pro, including plugin and mixing strategies.</p>
+        </div>
+        <button class="btn btn-primary" style="margin-top:20px; width:100%" onclick="closeModal('guideModal')">Back to Console</button>
+    </div>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div id="resetModal" class="modal-overlay">
+    <div class="modal">
+        <h3 class="card-title" style="color:var(--danger)">Wipe Studio Board?</h3>
+        <p style="font-size: 0.85rem; color:var(--text-dim); margin-bottom: 24px;">This will permanently delete your current project details and iterations.</p>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-ghost" style="flex:1" onclick="closeModal('resetModal')">Cancel</button>
+            <button class="btn btn-danger" style="flex:1" onclick="executeReset()">Reset Everything</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon" id="globalLogo">⚡</div>
+            <div class="brand-text"><h1>SONIC BRIEF AI</h1></div>
+        </div>
+
+        <nav class="nav-group">
+            <div class="nav-label">Core Ops</div>
+            <div class="nav-item active">🎹 Studio Console</div>
+            <div class="nav-item" onclick="exportToPDF()">📄 Export Results PDF</div>
+            <div class="nav-item" onclick="openExport()">💾 Export Session (JSON)</div>
+            <div class="nav-item" onclick="loadFromFile()">📂 Import Session</div>
+        </nav>
+
+        <nav class="nav-group">
+            <div class="nav-label">Knowledge Base</div>
+            <div class="nav-item" onclick="openModal('guideModal')">📖 Studio Guide</div>
+            <div class="nav-item" onclick="toggleTheme()">🌓 Theme Swap</div>
+            <div class="nav-item" onclick="openModal('resetModal')">🧹 Reset Board</div>
+        </nav>
+
+        <div style="margin-top: auto; font-size: 0.6rem; color: var(--text-muted); text-align: center;">Production Master V8.5</div>
+    </aside>
+
+    <main class="main-container">
+        <header class="top-bar">
+            <div id="projectTitleDisplay" style="font-weight: 700; color: var(--accent);">New Production Concept</div>
+            <div id="saveStatus" style="font-size: 0.7rem; color: var(--text-muted);">Session Persistence Ready</div>
+        </header>
+
+        <div class="editor-layout">
+            <div class="workspace">
+                <!-- Identity Card -->
+                <div class="card">
+                    <div class="card-title">Project Identity</div>
+                    <div class="grid grid-2">
+                        <div class="field"><label>Artist / Client Name</label><input type="text" id="clientName" placeholder="Artist Name"></div>
+                        <div class="field"><label>Track Title</label><input type="text" id="projectName" placeholder="Working Title" oninput="updateHeader()"></div>
+                    </div>
+                    <div class="field" style="margin-top:12px;">
+                        <label>Creative Theme (Primary Context for AI)</label>
+                        <input type="text" id="theme" placeholder="Describe the vibe, narrative, or setting—this fuels all AI functions...">
+                    </div>
+                </div>
+
+                <!-- Visual Identity Card -->
+                <div class="card">
+                    <div class="card-title">✨ Visual Identity <button class="magic-btn" onclick="aiGenerateArt()">✨ Generate Art</button></div>
+                    <div class="visual-preview" id="artPreview">
+                        <img id="artImage" src="" alt="Mood Visual">
+                    </div>
+                </div>
+
+                <!-- Musical DNA Card -->
+                <div class="card">
+                    <div class="card-title">
+                        Musical DNA 
+                        <div style="display:flex; gap:8px;">
+                            <button class="magic-btn" onclick="aiAutoFillDNA()">✨ AI Auto-Fill DNA</button>
+                            <button class="magic-btn" onclick="aiTheoryCheck()">✨ Theory Check</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-3">
+                        <div class="field"><label>BPM</label><input type="number" id="bpm" value="120"></div>
+                        <div class="field"><label>Key Center</label><select id="key"></select></div>
+                        <div class="field"><label>Scale / Mode</label><select id="scale"></select></div>
+                    </div>
+                    <div class="grid grid-3">
+                        <div class="field"><label>Genre / Lane</label><select id="genre" onchange="updateGenreSpecifics()"></select></div>
+                        <div class="field"><label>Era Context</label><select id="era" onchange="updateSuggestions()"></select></div>
+                        <div class="field"><label>Production Vibe</label><select id="vibe" onchange="updateSuggestions()"></select></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="field"><label>Time Signature</label><select id="timeSig"><option>4/4</option><option>3/4</option><option>6/8</option><option>5/4</option></select></div>
+                        <div class="field"><label>Song Structure Pattern</label>
+                            <select id="structure" onchange="saveSession()">
+                                <option value="Verse-Chorus-Verse-Chorus">Verse-Chorus-Verse-Chorus</option>
+                                <option value="AABA (Pop Standard)">AABA (Pop Standard)</option>
+                                <option value="Intro-Verse-Chorus-Bridge-Chorus-Outro">Extended Radio Edit</option>
+                                <option value="Verse-Verse-Chorus-Verse">Classic Folk/Country</option>
+                                <option value="Experimental / Non-Linear">Experimental</option>
+                                <option value="CUSTOM">Manual Override</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:center; padding:10px 0; border-top:1px solid var(--border); margin-top:10px;">
+                        <button class="magic-btn" style="width:100%; justify-content:center; padding:8px;" onclick="aiGetChords()">✨ HARMONY ENGINE: MAP CHORDS TO STRUCTURE</button>
+                    </div>
+
+                    <div id="chordDisplay" class="chord-display">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:0.65rem; font-weight:800; text-transform:uppercase;">Proposed Harmony Mapping</span>
+                            <button class="magic-btn" style="padding:2px 8px; font-size:0.6rem;" onclick="applyChordsToBrief()">➕ Apply to Brief</button>
+                        </div>
+                        <div id="chordContent" class="chord-text">Waiting for harmony engine...</div>
+                    </div>
+                </div>
+
+                <!-- Vocal Architecture -->
+                <div class="card">
+                    <div class="card-title">Vocal Architecture</div>
+                    <div class="grid grid-2">
+                        <div class="field"><label>Ensemble / Group</label><select id="vocalGroup"></select></div>
+                        <div class="field"><label>Vocalist Gender</label><select id="vocalGender"></select></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="field"><label>Vocal Register</label><select id="vocalRange"></select></div>
+                        <div class="field"><label>Vocal Texture</label><select id="vocalTexture"></select></div>
+                    </div>
+                    <div class="field"><label>Vocal POV / Style</label><select id="pov"></select></div>
+                </div>
+
+                <!-- Production Detail -->
+                <div class="card">
+                    <div class="card-title">
+                        Production Detail 
+                        <div style="display:flex; gap:6px;">
+                            <button class="magic-btn" onclick="aiLogicProTips()">✨ Logic Pro Tips</button>
+                            <button class="magic-btn" onclick="aiMixAssist()">✨ Mix Assist</button>
+                        </div>
+                    </div>
+                    <div class="field"><label>Keywords (Technical & Vibe)</label><input type="text" id="keywords" placeholder="analog, gritty, lush, spatial"></div>
+                    
+                    <div class="field">
+                        <label>Instrument Suggestions (Select to Add)</label>
+                        <div id="instSuggestions" class="suggestions"></div>
+                        <label>Selected Instrumentation</label>
+                        <textarea id="instruments" rows="2"></textarea>
+                    </div>
+
+                    <div class="field">
+                        <label>Technique Suggestions</label>
+                        <div id="prodSuggestions" class="suggestions"></div>
+                        <label>Producer's Technical Notes</label>
+                        <textarea id="prodNotes" rows="4"></textarea>
+                    </div>
+
+                    <div class="grid grid-2">
+                        <div class="field"><label>Must-Haves</label><textarea id="mustHaves" rows="2"></textarea></div>
+                        <div class="field"><label>Avoid (Exclusions)</label><textarea id="avoid" rows="2"></textarea></div>
+                    </div>
+                    <div class="field"><label>Reference Tracks / Artists</label><input type="text" id="references" placeholder="e.g. Tame Impala, Daft Punk"></div>
+                </div>
+
+                <!-- Performance Dials -->
+                <div class="card">
+                    <div class="card-title">Performance Dials & Suno Steering</div>
+                    <div class="grid grid-2">
+                        <div class="slider-box">
+                            <div class="slider-header"><label>Energy Intensity</label><span id="eVal">5</span></div>
+                            <input type="range" id="energy" min="1" max="10" value="5" oninput="updateEnergyUI(this.value)">
+                        </div>
+                        <div class="slider-box">
+                            <div class="slider-header"><label>Complexity</label><span id="cVal">5</span></div>
+                            <input type="range" id="complexity" min="1" max="10" value="5" oninput="updateVal('complexity', 'cVal')">
+                        </div>
+                        <div class="slider-box">
+                            <div class="slider-header"><label>Weirdness (Diversity)</label><span id="wVal">50%</span></div>
+                            <input type="range" id="weirdness" min="0" max="100" value="50" oninput="updatePercentVal('weirdness', 'wVal')">
+                        </div>
+                        <div class="slider-box">
+                            <div class="slider-header"><label>Style Influence</label><span id="iVal">50%</span></div>
+                            <input type="range" id="influence" min="0" max="100" value="50" oninput="updatePercentVal('influence', 'iVal')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="results-panel">
+                <div class="card-title">Workflow Strategy</div>
+                <div class="workflow-grid" id="wfGrid"></div>
+
+                <div class="card" id="lyricsCard" style="display:none; padding:15px; margin-bottom:0;">
+                    <div class="card-title" style="font-size:0.8rem;">
+                        Lyrics / Structure 
+                        <div style="display:flex; gap:4px;">
+                            <button class="magic-btn" onclick="aiGenerateLyrics()">✨ AI Write</button>
+                            <button class="magic-btn" onclick="aiPolishLyrics()">✨ Polish</button>
+                        </div>
+                    </div>
+                    <textarea id="lyrics" style="min-height: 150px; width:100%; font-size:0.75rem;" placeholder="Paste lyrics here..."></textarea>
+                    
+                    <div class="nav-label" style="margin-top:10px; padding:0;">Structure Assistant</div>
+                    <div id="structureTags" class="suggestions"></div>
+                    
+                    <button class="magic-btn" style="width:100%; justify-content:center; margin-top:8px;" onclick="aiVocalPreview()">✨ Play Vocal Vibe Preview</button>
+                    <audio id="ttsAudio" style="display:none; width:100%; margin-top:10px; height:35px;" controls></audio>
+                </div>
+
+                <button class="btn btn-primary" onclick="compile()">✨ COMPILE PRODUCTION SUITE</button>
+
+                <div class="output-block">
+                    <div class="output-header">Studio Brief <button class="chip" onclick="copyText('brief')">Copy</button></div>
+                    <div class="output-content" id="brief">Waiting for compilation...</div>
+                </div>
+
+                <div class="output-block">
+                    <div class="output-header">Technical Style Prompt <button class="chip" onclick="copyText('prompt')">Copy</button></div>
+                    <div class="output-content" id="prompt">Waiting...</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Take Vault <span id="takeCount">0</span></div>
+                    <div id="takeVaultList"></div>
+                </div>
+            </aside>
+        </div>
+    </main>
+</div>
+
+<script>
+    const apiKey = "";
+    const SESSION_KEY = "sonic_brief_master_v85";
+    
+    let state = { activeWF: 'txt-audio', takes: [], appliedChords: "" };
+
+    const LOOKUPS = {
+        genres: ['Pop', 'Indie Pop', 'Synthwave', 'House', 'Techno', 'Trap', 'Drill', 'R&B', 'Soul', 'Funk', 'Rock', 'Grunge', 'Metal', 'Shoegaze', 'Jazz', 'Blues', 'Americana', 'Folk', 'Country', 'Ambient', 'Cinematic'],
+        eras: ['Modern (2024+)', '2010s Digital', '2000s Pop', '90s Grunge', '80s Synth', '70s Analog', 'Vintage Mono'],
+        vibes: ['Polished', 'Hi-Fi', 'Lo-Fi', 'Raw/Gritty', 'Atmospheric', 'Glitchy', 'Psychedelic'],
+        instrumentMaps: {
+            'Pop': ['Piano', 'Electric Guitar', 'Synth Bass', 'Pop Drums'],
+            'House': ['808 Kick', 'Piano Stabs', 'Shakers', 'Club Synths'],
+            'Rock': ['Overdrive Guitar', 'Heavy Drums', 'Electric Bass'],
+            'Jazz': ['Saxophone', 'Upright Bass', 'Brushed Drums'],
+            'Lo-fi': ['Vinyl Crackle', 'Rhodes', 'MPC Drums'],
+            'Country': ['Acoustic Guitar', 'Harmonica', 'Banjo']
+        },
+        prodMaps: {
+            'Modern (2024+)': ['Sidechain', 'Saturator', 'Ultra-Wide', 'Clean EQ'],
+            '90s Grunge': ['Tape Saturation', 'Raw Mic', 'Minimal Reverb'],
+            '80s Synth': ['Gated Reverb', 'Chorus/Flanger', 'FM Synthesis'],
+            'Lo-Fi': ['Wow and Flutter', 'Bitcrush', 'Low-Pass Filter']
+        }
+    };
+
+    // --- Gemini API ---
+    async function callGemini(prompt, isJson = false) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: isJson ? { responseMimeType: "application/json" } : {} };
+        const loader = document.getElementById('aiLoader');
+        if (loader) loader.style.display = 'flex';
+        try {
+            const response = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if (loader) loader.style.display = 'none';
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                const text = data.candidates[0].content.parts[0].text;
+                return isJson ? JSON.parse(text) : text;
+            }
+            throw new Error("Invalid API response");
+        } catch (err) {
+            if (loader) loader.style.display = 'none';
+            showToast("Gemini Offline. Retrying...");
+            throw err;
+        }
+    }
+
+    // --- AI Logic Engine ---
+    async function aiGetChords() {
+        const genre = document.getElementById('genre').value;
+        const struct = document.getElementById('structure').value;
+        const prompt = `Professional context-aware chord progressions for a ${genre} track. Structure: ${struct}. Provide distinct Verse and Chorus progressions. Roman Numerals + Names. Under 25 words.`;
+        try {
+            const res = await callGemini(prompt);
+            document.getElementById('chordContent').innerText = res;
+            document.getElementById('chordDisplay').style.display = 'block';
+            showToast("Harmony Engine Calculated!");
+        } catch (e) { showToast("Harmony Engine Error."); }
+    }
+
+    async function aiLogicProTips() {
+        const genre = document.getElementById('genre').value;
+        try {
+            const res = await callGemini(`Logic Pro production Roadmap for ${genre}. Mention specific stock plugins and stem-mixing.`);
+            document.getElementById('prodNotes').value += "\n\n--- LOGIC PRO WORKFLOW ---\n" + res;
+            showToast("Roadmap injected!");
+            saveSession();
+        } catch (e) { showToast("Logic Tips Offline."); }
+    }
+
+    async function aiTheoryCheck() {
+        const key = document.getElementById('key').value;
+        const scale = document.getElementById('scale').value;
+        try {
+            const res = await callGemini(`Explain musical fit of ${key} ${scale} for theme "${document.getElementById('theme').value}". 2 sentences.`);
+            document.getElementById('prodNotes').value += "\n\n--- THEORY CHECK ---\n" + res;
+            showToast("Theory check added.");
+            saveSession();
+        } catch (e) { showToast("Theory Assist Offline."); }
+    }
+
+    async function aiMixAssist() {
+        const res = await callGemini(`3 mixing tips for ${document.getElementById('genre').value} ${document.getElementById('vibe').value}.`);
+        document.getElementById('prodNotes').value += "\n\n--- AI MIX ASSIST ---\n" + res;
+        showToast("Mix guide added.");
+        saveSession();
+    }
+
+    async function aiAutoFillDNA() {
+        const theme = document.getElementById('theme').value;
+        if(!theme) return showToast("Enter theme first!");
+        const data = await callGemini(`Theme: "${theme}". JSON: bpm, key, scale, genre, era, vibe, instrumentation, keywords, vocalGroup, vocalGender, vocalRange, vocalTexture, pov.`, true);
+        Object.keys(data).forEach(id => { const el = document.getElementById(id); if(el) el.value = data[id]; });
+        updateSuggestions();
+        showToast("Intelligence Synced!");
+        saveSession();
+    }
+
+    // --- Media Generation ---
+    async function aiGenerateArt() {
+        const theme = document.getElementById('theme').value;
+        if(!theme) return showToast("Theme required");
+        showToast("Visualizing...");
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+        const payload = { instances: { prompt: `Studio album cover for "${theme}". Professional, cinematic.` }, parameters: { sampleCount: 1 } };
+        try {
+            const response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+            const data = await response.json();
+            if (data.predictions?.[0]) {
+                document.getElementById('artImage').src = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+                document.getElementById('artPreview').style.display = 'block';
+                showToast("Visual ID Created!");
+            }
+        } catch (e) { showToast("Imagen restricted."); }
+    }
+
+    async function aiVocalPreview() {
+        const lyrics = document.getElementById('lyrics').value;
+        if(!lyrics) return showToast("Enter lyrics!");
+        const voice = document.getElementById('vocalGender').value.includes('Female') ? 'Kore' : 'Zephyr';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+        const payload = {
+            contents: [{ parts: [{ text: `Say with a studio tone: ${lyrics.substring(0, 350)}` }] }],
+            generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
+            model: "gemini-2.5-flash-preview-tts"
+        };
+        try {
+            const response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+            const data = await response.json();
+            const raw = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+            if (raw) {
+                const player = document.getElementById('ttsAudio');
+                player.src = URL.createObjectURL(pcmToWav(raw, 24000));
+                player.style.display = 'block';
+                player.play();
+                showToast("Vocal Cadence Previewing...");
+            }
+        } catch (e) { showToast("Vocal Preview Offline."); }
+    }
+
+    function pcmToWav(base64, sampleRate) {
+        const pcm = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        const buffer = new ArrayBuffer(44 + pcm.length);
+        const view = new DataView(buffer);
+        view.setUint32(0, 0x52494646, false); view.setUint32(4, 36 + pcm.length, true); view.setUint32(8, 0x57415645, false);
+        view.setUint32(12, 0x666d7420, false); view.setUint16(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+        view.setUint32(36, 0x64617461, false); view.setUint32(40, pcm.length, true);
+        for (let i = 0; i < pcm.length; i++) view.setUint8(44 + i, pcm[i]);
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    // --- Core Operations ---
+    function exportToPDF() { window.print(); showToast("Generating PDF..."); }
+
+    function executeReset() {
+        closeModal('resetModal');
+        localStorage.removeItem(SESSION_KEY);
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.type === 'number') el.value = 120;
+            else if (el.type === 'range') el.value = 50;
+            else el.value = '';
+        });
+        state = { activeWF: 'txt-audio', takes: [], appliedChords: "" };
+        window.location.reload();
+    }
+
+    function compile() {
+        const d = {
+            project: document.getElementById('projectName').value || "Project",
+            client: document.getElementById('clientName').value || "Independent",
+            genre: document.getElementById('genre').value,
+            bpm: document.getElementById('bpm').value,
+            key: document.getElementById('key').value,
+            scale: document.getElementById('scale').value,
+            energy: document.getElementById('energy').value,
+            weird: document.getElementById('weirdness').value,
+            influence: document.getElementById('influence').value,
+            notes: document.getElementById('prodNotes').value,
+            vGender: document.getElementById('vocalGender').value,
+            keywords: document.getElementById('keywords').value,
+            avoid: document.getElementById('avoid').value,
+            wf: state.activeWF
+        };
+        
+        let brief = `══ SONIC BRIEF: ${d.project.toUpperCase()} ══\nARTIST: ${d.client}\nSTRATEGY: ${d.wf.toUpperCase()}\n\n[DNA] ${d.key} ${d.scale} | ${d.bpm} BPM | ${d.genre}\n[STEERING] Weirdness: ${d.weird}% | Influence: ${d.influence}%\n\n[PROD NOTES]\n${d.notes || 'N/A'}`;
+        
+        let prompt = `[Style: ${d.genre}, ${d.key} ${d.scale}, ${document.getElementById('era').value}, ${document.getElementById('vibe').value}, ${d.bpm}bpm]\n[Vocal: ${d.vGender}]\n[Keywords: ${d.keywords}]`;
+        if (state.appliedChords) prompt += `\n[Harmony: ${state.appliedChords}]`;
+        if (d.avoid) prompt += `\n[No: ${d.avoid}]`;
+        prompt += `\n[Perf: Energy ${d.energy}/10, Complexity ${document.getElementById('complexity').value}/10, Influence ${d.influence}%, Weirdness ${d.weird}%]`;
+
+        document.getElementById('brief').innerText = brief;
+        document.getElementById('prompt').innerText = prompt;
+        showToast("Production Suite Compiled");
+    }
+
+    // --- Helpers ---
+    function insertTag(tag) {
+        const lyr = document.getElementById('lyrics');
+        const start = lyr.selectionStart;
+        const text = lyr.value;
+        lyr.value = text.substring(0, start) + "\n" + tag + "\n" + text.substring(lyr.selectionEnd);
+        lyr.focus(); saveSession();
+    }
+
+    function updateEnergyUI(val) {
+        document.getElementById('eVal').innerText = val;
+        const colors = ['#3b82f6', '#60a5fa', '#8b5cf6', '#a855f7', '#d946ef', '#f43f5e', '#fb7185', '#f97316', '#ea580c', '#dc2626'];
+        document.documentElement.style.setProperty('--accent', colors[parseInt(val)-1]);
+        saveSession();
+    }
+
+    function updatePercentVal(id, t) { document.getElementById(t).innerText = document.getElementById(id).value + "%"; saveSession(); }
+    function updateVal(id, t) { document.getElementById(t).innerText = document.getElementById(id).value; saveSession(); }
+    function toggleTheme() { 
+        const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next); 
+        localStorage.setItem('sonic_theme_master', next);
+    }
+
+    function updateGenreSpecifics() {
+        const bpmMap = { 'Pop': 110, 'House': 124, 'Trap': 140, 'Jazz': 90, 'Lo-fi': 85 };
+        const g = document.getElementById('genre').value;
+        if (bpmMap[g]) document.getElementById('bpm').value = bpmMap[g];
+        updateSuggestions();
+        saveSession();
+    }
+
+    function updateSuggestions() {
+        const genre = document.getElementById('genre').value;
+        const era = document.getElementById('era').value;
+        const instBox = document.getElementById('instSuggestions');
+        const prodBox = document.getElementById('prodSuggestions');
+        if (instBox) {
+            instBox.innerHTML = '';
+            (LOOKUPS.instrumentMaps[genre] || ['Guitar', 'Keys', 'Drums']).forEach(i => {
+                const chip = document.createElement('span'); chip.className = 'chip'; chip.innerText = i;
+                chip.onclick = () => { document.getElementById('instruments').value += (document.getElementById('instruments').value ? ', ' : '') + i; saveSession(); };
+                instBox.appendChild(chip);
+            });
+        }
+        if (prodBox) {
+            prodBox.innerHTML = '';
+            (LOOKUPS.prodMaps[era] || ['Parallel Compression', 'Tape Saturator']).forEach(p => {
+                const chip = document.createElement('span'); chip.className = 'chip'; chip.innerText = p;
+                chip.onclick = () => { document.getElementById('prodNotes').value += (document.getElementById('prodNotes').value ? '\n' : '') + p; saveSession(); };
+                prodBox.appendChild(chip);
+            });
+        }
+    }
+
+    function applyChordsToBrief() {
+        state.appliedChords = document.getElementById('chordContent').innerText;
+        document.getElementById('prodNotes').value += "\n\n[HARMONY]\n" + state.appliedChords;
+        showToast("Harmony Applied"); saveSession();
+    }
+
+    async function aiGenerateLyrics() {
+        const res = await callGemini(`Lyrics for ${document.getElementById('genre').value} about ${document.getElementById('theme').value}. Use [Verse] [Chorus].`);
+        document.getElementById('lyrics').value = res; saveSession();
+    }
+
+    async function aiPolishLyrics() {
+        const res = await callGemini(`Polish these lyrics for music production: ${document.getElementById('lyrics').value}`);
+        document.getElementById('lyrics').value = res; showToast("Polished!");
+    }
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function updateHeader() { document.getElementById('projectTitleDisplay').innerText = document.getElementById('projectName').value || "New Project"; }
+
+    function saveSession() {
+        const data = { activeWF: state.activeWF, appliedChords: state.appliedChords };
+        document.querySelectorAll('input, select, textarea').forEach(el => { if(el.id) data[el.id] = el.value; });
+        localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+    }
+
+    function loadSession() {
+        const savedTheme = localStorage.getItem('sonic_theme_master') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const saved = localStorage.getItem(SESSION_KEY);
+        if(!saved) return;
+        const data = JSON.parse(saved);
+        Object.keys(data).forEach(id => { const el = document.getElementById(id); if(el) el.value = data[id]; });
+        if(data.activeWF) setWorkflow(data.activeWF);
+        if(data.appliedChords) {
+            state.appliedChords = data.appliedChords;
+            document.getElementById('chordContent').innerText = data.appliedChords;
+            document.getElementById('chordDisplay').style.display = 'block';
+        }
+        updateEnergyUI(document.getElementById('energy').value || 5);
+        updateHeader(); updateSuggestions();
+    }
+
+    function setWorkflow(id) {
+        state.activeWF = id;
+        document.querySelectorAll('.wf-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-wf-id') === id));
+        const hasVocal = ['txt-audio','vocal','cover','remix'].includes(id);
+        document.getElementById('lyricsCard').style.display = hasVocal ? 'block' : 'none';
+        saveSession();
+    }
+
+    function openExport() { openModal('exportModal'); }
+    function executeExport() {
+        const data = localStorage.getItem(SESSION_KEY);
+        const blob = new Blob([data], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `SonicBrief_${document.getElementById('projectName').value || 'Project'}.json`;
+        a.click(); closeModal('exportModal');
+    }
+
+    function loadFromFile() {
+        const input = document.createElement('input'); input.type = 'file';
+        input.onchange = e => {
+            const reader = new FileReader();
+            reader.onload = re => { localStorage.setItem(SESSION_KEY, re.target.result); loadSession(); showToast("Imported!"); };
+            reader.readAsText(e.target.files[0]);
+        };
+        input.click();
+    }
+
+    function showToast(msg) {
+        const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
+        const container = document.getElementById('toast-container');
+        if (container) { container.appendChild(t); setTimeout(() => t.remove(), 3000); }
+    }
+
+    function copyText(id) {
+        const el = document.getElementById(id);
+        const ta = document.createElement("textarea"); ta.value = el.innerText;
+        ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        showToast("Copied to Clipboard");
+    }
+
+    function initUI() {
+        const populate = (id, list) => { const el = document.getElementById(id); if (el) list.forEach(item => el.add(new Option(item, item))); };
+        populate('key', ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B']);
+        populate('scale', ['Major','Minor','Dorian','Mixolydian','Lydian','Harmonic Minor','Blues']);
+        populate('genre', LOOKUPS.genres);
+        populate('vocalGroup', ['Solo Singer', 'Duet', 'Chorus']);
+        populate('vocalGender', ['Female', 'Male', 'Androgynous']);
+        populate('vocalRange', ['Standard', 'Soprano', 'Alto', 'Tenor', 'Baritone', 'Bass']);
+        populate('vocalTexture', ['Clean', 'Breathy', 'Gritty', 'Auto-tuned']);
+        populate('pov', ['1st Person', 'Narrator', 'Instrumental']);
+        
+        const wfs = [
+            { id: 'txt-audio', icon: '📝', label: 'Full Song' },
+            { id: 'remix', icon: '🌀', label: 'Remix Mode' },
+            { id: 'cover', icon: '🎭', label: 'Cover Song' },
+            { id: 'extend', icon: '➡️', label: 'Extend' },
+            { id: 'vocal', icon: '🎤', label: 'Vocal Gen' },
+            { id: 'stems', icon: '🎹', label: 'Stems' }
+        ];
+        const grid = document.getElementById('wfGrid');
+        if (grid) {
+            wfs.forEach(wf => {
+                const btn = document.createElement('div'); btn.className = 'wf-btn'; btn.setAttribute('data-wf-id', wf.id);
+                btn.innerHTML = `<i>${wf.icon}</i><span>${wf.label}</span>`;
+                btn.onclick = () => setWorkflow(wf.id);
+                grid.appendChild(btn);
+            });
+        }
+        const tagBox = document.getElementById('structureTags');
+        if (tagBox) {
+            ['[Intro]','[Verse]','[Chorus]','[Bridge]','[Outro]'].forEach(tag => {
+                const chip = document.createElement('span'); chip.className = 'chip'; chip.innerText = tag;
+                chip.onclick = () => { insertTag(tag); };
+                tagBox.appendChild(chip);
+            });
+        }
+        loadSession();
+    }
+
+    window.onload = initUI;
+</script>
+</body>
 </html>
